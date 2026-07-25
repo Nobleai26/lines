@@ -38,6 +38,19 @@
     });
   }
 
+  // Try a list of candidate paths in order; resolve with the first that loads
+  // (or null if none do). Lets us accept either .png or .jpg without fuss.
+  function loadFirst(srcs) {
+    var i = 0;
+    function next() {
+      if (i >= srcs.length) return Promise.resolve(null);
+      return loadImage(srcs[i++]).then(function (img) {
+        return img || next();
+      });
+    }
+    return next();
+  }
+
   // Average the four corner pixels of an image to get a fallback plate colour.
   function sampleCornerColor(img) {
     try {
@@ -343,7 +356,10 @@
   window.addEventListener("resize", resize);
   window.addEventListener("orientationchange", resize);
 
-  Promise.all([loadImage("public/powder.jpg"), loadImage("public/clean.jpg")]).then(
+  Promise.all([
+    loadFirst(["public/powder.jpg", "public/powder.png"]),
+    loadFirst(["public/clean.jpg", "public/clean.png"]),
+  ]).then(
     function (imgs) {
       powderImg = imgs[0];
       cleanImg = imgs[1];
