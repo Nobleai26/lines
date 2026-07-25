@@ -64,6 +64,13 @@ corner** (about a 90px box) for roughly **0.8 seconds while holding still**. If
 your finger moves more than ~12px during the hold, it's treated as a wipe
 instead of a reset.
 
+## Full screen
+
+The app goes full screen automatically on your first tap (Android/Chrome and
+desktop). On **iPhone**, tap the Share button in Safari → **Add to Home Screen**,
+then launch it from the home-screen icon — it opens edge-to-edge with no Safari
+chrome (the most convincing option for the gag).
+
 ## Deploy
 
 Static site — deploy the folder as-is to Vercel (or any static host):

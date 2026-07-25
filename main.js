@@ -241,7 +241,35 @@
    * Pointer plumbing (touch + mouse)
    * -------------------------------------------------------------------- */
 
+  /* ----------------------------------------------------------------------
+   * Full screen: browsers only allow it from a user gesture, so we request
+   * it on the first touch/click. Silently no-ops where unsupported (e.g.
+   * iOS Safari, where "Add to Home Screen" gives true full screen instead).
+   * -------------------------------------------------------------------- */
+
+  var fullscreenTried = false;
+
+  function enterFullscreen() {
+    if (fullscreenTried) return;
+    fullscreenTried = true;
+    var el = document.documentElement;
+    var req =
+      el.requestFullscreen ||
+      el.webkitRequestFullscreen ||
+      el.mozRequestFullScreen ||
+      el.msRequestFullscreen;
+    if (req) {
+      try {
+        var r = req.call(el);
+        if (r && typeof r.catch === "function") r.catch(function () {});
+      } catch (e) {
+        /* ignore — not fatal */
+      }
+    }
+  }
+
   function onDown(x, y) {
+    enterFullscreen();
     if (inResetCorner(x, y)) {
       // Ambiguous: could be a reset-hold or the start of a wipe.
       startHoldCandidate(x, y);
