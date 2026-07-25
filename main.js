@@ -338,6 +338,7 @@
     "touchend",
     function (e) {
       e.preventDefault();
+      enterFullscreen(); // fallback: some browsers only allow it on touchend
       onUp();
     },
     { passive: false }

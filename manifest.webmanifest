@@ -1,0 +1,10 @@
+{
+  "name": "lines",
+  "short_name": "lines",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#0d0f12",
+  "theme_color": "#0d0f12",
+  "start_url": "./",
+  "scope": "./"
+}
