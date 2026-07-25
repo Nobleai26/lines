@@ -26,8 +26,28 @@ Two stacked canvases:
   `object-fit: cover`).
 
 Wiping erases the top layer along your finger path with
-`globalCompositeOperation = 'destination-out'` (round brush, ~6% of screen
-height), so the clean plate below shows through seamlessly — no visible patch.
+`globalCompositeOperation = 'destination-out'`, so the clean plate below shows
+through seamlessly — no visible patch.
+
+### The wipe brush
+
+A plain round eraser reads as a cartoon circle, so the brush is built to
+behave like an actual fingertip smear:
+
+- **Soft, feathered edge** — a radial-gradient alpha falloff, no hard rim.
+- **Directional stretch** — the contact patch elongates along the drag and
+  stretches further the faster you move (up to 2×).
+- **Partial lift** — one pass only removes ~50%, leaving residue; going back
+  over the same spot cleans it properly, like real powder.
+- **Fingertip ridges** — a few smaller offset blobs perpendicular to travel
+  give the swath streaky internal structure.
+- **Interpolated path** — dabs are walked along the finger path so fast swipes
+  smear continuously instead of leaving a dotted trail.
+
+Tune it with the `WIPE_*` constants at the top of `main.js`
+(`WIPE_STRENGTH` for how much a single pass lifts, `BRUSH_FRACTION` for
+fingertip size, `WIPE_STREAKS` for ridge count — set it to `1` for a plain
+smooth pad).
 
 If `clean.jpg` is missing, the bottom layer falls back to the average colour of
 `powder.jpg`'s four corners. It still works; `clean.jpg` just looks better.

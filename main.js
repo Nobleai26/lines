@@ -18,8 +18,25 @@
   var viewH = 0;
   var dpr = 1;
 
-  // Brush radius as a fraction of screen height.
-  var BRUSH_FRACTION = 0.06;
+  /* --- Wipe brush ("fingertip smear") -----------------------------------
+   * A hard round eraser reads as a cartoon circle. A real finger wipe is a
+   * soft, directional smear: it stretches along the drag, has a feathered
+   * edge, doesn't lift everything in one pass (residue lingers, and going
+   * over the same spot again cleans it), and leaves faint streaks where the
+   * fingertip ridges drag powder aside.
+   * ------------------------------------------------------------------- */
+  var BRUSH_FRACTION = 0.075;    // fingertip radius, fraction of screen height
+  var WIPE_STRENGTH = 0.5;       // how much a single dab lifts (0..1)
+  var WIPE_FEATHER_INNER = 0.3;  // 0..1 of radius held at full strength
+  var WIPE_FEATHER_MID = 0.72;   // where the soft falloff sits
+  var WIPE_ELONGATION = 1.0;     // extra stretch along the drag at speed
+  var WIPE_STEP_FRACTION = 0.22; // path interpolation, as a fraction of radius
+  var WIPE_MAX_DABS = 48;        // work cap per event, so a huge jump can't stall
+  var WIPE_STREAKS = 3;          // parallel fingertip ridges (1 = plain pad)
+  var WIPE_STREAK_EVERY = 2;     // ridges every Nth dab (texture, not coverage)
+  var WIPE_STREAK_SPREAD = 0.5;  // ridge offset, as a fraction of radius
+  var WIPE_STREAK_SIZE = 0.62;   // ridge size, relative to the main pad
+  var WIPE_STREAK_JITTER = 0.18; // wobble so ridges aren't mechanical
 
   /* ----------------------------------------------------------------------
    * Image loading
@@ -157,25 +174,91 @@
   var lastX = null;
   var lastY = null;
 
-  function eraseDot(x, y) {
-    var r = brushRadius();
+  // One soft, feathered, partially-erasing blob. Elongated along (dirX,dirY)
+  // and scaled by `size`. Nothing here has a hard edge.
+  function smearBlob(x, y, dirX, dirY, radius, strength) {
+    var len = Math.sqrt(dirX * dirX + dirY * dirY);
+    // Faster drags stretch the contact patch out into a smear.
+    var stretch =
+      1 + WIPE_ELONGATION * Math.min(1, len / (radius * 0.8));
+
+    powderCtx.save();
     powderCtx.globalCompositeOperation = "destination-out";
+    powderCtx.translate(x, y);
+    if (len > 0.0001) powderCtx.rotate(Math.atan2(dirY, dirX));
+    powderCtx.scale(stretch, 1);
+
+    // destination-out removes in proportion to the alpha we paint, so the
+    // gradient *is* the softness, and `strength` is how much one pass lifts.
+    var g = powderCtx.createRadialGradient(0, 0, 0, 0, 0, radius);
+    g.addColorStop(0, "rgba(0,0,0," + strength + ")");
+    g.addColorStop(WIPE_FEATHER_INNER, "rgba(0,0,0," + strength * 0.94 + ")");
+    g.addColorStop(WIPE_FEATHER_MID, "rgba(0,0,0," + strength * 0.42 + ")");
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    powderCtx.fillStyle = g;
+
     powderCtx.beginPath();
-    powderCtx.arc(x, y, r, 0, Math.PI * 2);
+    powderCtx.arc(0, 0, radius, 0, Math.PI * 2);
     powderCtx.fill();
+    powderCtx.restore();
   }
 
-  // Erase a continuous round-capped stroke from (x0,y0) to (x1,y1).
+  // The fingertip: a main pad plus a few offset ridges, so the swath has
+  // streaky internal structure instead of being one uniform blob.
+  function smearDab(x, y, dirX, dirY, withStreaks) {
+    var r = brushRadius();
+    smearBlob(x, y, dirX, dirY, r, WIPE_STRENGTH);
+
+    if (WIPE_STREAKS < 2 || withStreaks === false) return;
+
+    var len = Math.sqrt(dirX * dirX + dirY * dirY);
+    // Ridges sit perpendicular to the direction of travel.
+    var perpX, perpY;
+    if (len > 0.0001) {
+      perpX = -dirY / len;
+      perpY = dirX / len;
+    } else {
+      perpX = 0;
+      perpY = 1;
+    }
+
+    for (var i = 0; i < WIPE_STREAKS; i++) {
+      // Spread ridges evenly across the pad, -1..+1.
+      var t = WIPE_STREAKS === 1 ? 0 : (i / (WIPE_STREAKS - 1)) * 2 - 1;
+      var jitter = (Math.random() * 2 - 1) * WIPE_STREAK_JITTER;
+      var off = (t * WIPE_STREAK_SPREAD + jitter) * r;
+      smearBlob(
+        x + perpX * off,
+        y + perpY * off,
+        dirX,
+        dirY,
+        r * WIPE_STREAK_SIZE,
+        WIPE_STRENGTH * (0.5 + Math.random() * 0.35)
+      );
+    }
+  }
+
+  // Walk the finger path in small steps so a fast swipe still smears
+  // continuously instead of leaving a dotted trail.
   function eraseStroke(x0, y0, x1, y1) {
     var r = brushRadius();
-    powderCtx.globalCompositeOperation = "destination-out";
-    powderCtx.lineWidth = r * 2;
-    powderCtx.lineCap = "round";
-    powderCtx.lineJoin = "round";
-    powderCtx.beginPath();
-    powderCtx.moveTo(x0, y0);
-    powderCtx.lineTo(x1, y1);
-    powderCtx.stroke();
+    var dx = x1 - x0;
+    var dy = y1 - y0;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    var step = Math.max(1, r * WIPE_STEP_FRACTION);
+    var n = Math.max(1, Math.ceil(dist / step));
+    // If a single event covers a huge distance (stalled frame, mouse jump),
+    // spread the dabs instead of drawing hundreds of them.
+    if (n > WIPE_MAX_DABS) n = WIPE_MAX_DABS;
+    for (var i = 1; i <= n; i++) {
+      var t = i / n;
+      smearDab(x0 + dx * t, y0 + dy * t, dx, dy, i % WIPE_STREAK_EVERY === 0);
+    }
+  }
+
+  // A stationary touch: press without dragging, no direction to stretch along.
+  function eraseDot(x, y) {
+    smearDab(x, y, 0, 0);
   }
 
   function wipeStart(x, y) {
