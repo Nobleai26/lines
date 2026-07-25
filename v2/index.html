@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+  />
+  <meta name="theme-color" content="#000000" />
+  <!-- Standalone / full-screen when added to the home screen (iOS + Android). -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="lines" />
+  <link rel="apple-touch-icon" href="public/apple-touch-icon.png" />
+  <link rel="icon" href="public/icon-192.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <title>lines 2.0</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Bottom layer: black (plus optional faint guides). -->
+  <canvas id="base"></canvas>
+  <!-- Top layer: the powder. Pushed around in MODE 1, erased in MODE 2. -->
+  <canvas id="top"></canvas>
+
+  <!-- Quick fade flash used to confirm the mode switch. -->
+  <div id="flash" aria-hidden="true"></div>
+
+  <!-- The only visible control: a low-opacity fullscreen toggle. -->
+  <button id="fs" type="button" aria-label="Toggle full screen">
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+      <path
+        d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+      />
+    </svg>
+  </button>
+
+  <script src="main.js"></script>
+</body>
+</html>

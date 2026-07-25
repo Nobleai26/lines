@@ -3,6 +3,17 @@
 A tiny mobile web gag, in two phases. Plain static site: `index.html` +
 `style.css` + `main.js`. No framework, no build step, all HTML5 Canvas.
 
+## Two versions live side by side
+
+| | Where | Mode 1 behaviour |
+| --- | --- | --- |
+| **v1** (this folder) | site root | Powder is dusted over the whole screen; swiping *auto-arranges* it onto three target lines. |
+| **v2** ([`v2/`](v2/)) | `/v2/` | Powder starts as one dense pile in the centre and **only** moves where you physically push it — no snapping. You smear the lines yourself. |
+
+Both share the same Mode 2 (wipe) and the same gestures. v2 is self-contained
+in `v2/` so the original keeps working, unchanged, at the original URL.
+Details of v2's physics and its tunables are in [`v2/README.md`](v2/README.md).
+
 ## The flow
 
 **MODE 1 — ARRANGE** (active on load)
