@@ -1,0 +1,43 @@
+/* Full-screen, no scroll, no selection, no touch gestures. */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0d0f12;
+}
+
+body {
+  position: fixed;
+  inset: 0;
+  touch-action: none;              /* stop the browser from scrolling/zooming on drag */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;     /* no long-press image menu on iOS */
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+/* Both canvases fill the viewport and sit exactly on top of one another. */
+canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+#clean {
+  z-index: 1;   /* underneath */
+}
+
+#powder {
+  z-index: 2;   /* on top — this is the layer we erase */
+}
